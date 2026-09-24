@@ -78,9 +78,30 @@
     line-height: 1.6;
   }
   .wrap{
-    max-width: 880px;
+    max-width: 1320px;
     margin: 0 auto;
     padding: 28px 20px 60px;
+  }
+  .layout{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (min-width: 980px){
+    .layout{
+      grid-template-columns: minmax(0,1fr) 440px;
+    }
+    .layout .right-col{
+      position: sticky;
+      top: 16px;
+    }
+  }
+  .left-col, .right-col{
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
   }
   header h1{
     font-family: "Noto Serif TC", serif;
@@ -96,6 +117,11 @@
     max-width: 62ch;
   }
 
+  .layout > section,
+  .left-col > section,
+  .right-col > section{
+    margin-top: 0;
+  }
   section{
     margin-top: 22px;
   }
@@ -232,12 +258,9 @@
 
   .chart-grid{
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 16px;
     margin-top: 10px;
-  }
-  @media (max-width: 640px){
-    .chart-grid{ grid-template-columns: 1fr; }
   }
   .chart-title{
     font-family: "Noto Serif TC", serif;
@@ -267,94 +290,100 @@
     <p>模擬小車拉動紙帶通過打點計時器的過程。選擇運動方式並開始,觀察紙帶被拉出來的樣子與點的間距,再點選兩點量出這段的平均速度。</p>
   </header>
 
-  <section class="panel" id="controls">
-    <div class="field-row">
-      <div class="field">
-        <label>運動方式</label>
-        <div class="segmented" id="motionSeg">
-          <button data-mode="stationary" aria-pressed="false">靜止</button>
-          <button data-mode="constant" aria-pressed="false">等速度運動</button>
-          <button data-mode="accelerate" aria-pressed="true">等加速度運動(加速)</button>
-          <button data-mode="decelerate" aria-pressed="false">等加速度運動(減速)</button>
-          <button data-mode="incline" aria-pressed="false">斜面下滑</button>
-          <button data-mode="manual" aria-pressed="false">手動拉動</button>
+  <div class="layout">
+    <div class="left-col">
+      <section class="panel" id="controls">
+        <div class="field-row">
+          <div class="field">
+            <label>運動方式</label>
+            <div class="segmented" id="motionSeg">
+              <button data-mode="stationary" aria-pressed="false">靜止</button>
+              <button data-mode="constant" aria-pressed="false">等速度運動</button>
+              <button data-mode="accelerate" aria-pressed="true">等加速度運動(加速)</button>
+              <button data-mode="decelerate" aria-pressed="false">等加速度運動(減速)</button>
+              <button data-mode="incline" aria-pressed="false">斜面下滑</button>
+              <button data-mode="manual" aria-pressed="false">手動拉動</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>計時器頻率</label>
+            <div class="segmented" id="freqSeg">
+              <button data-freq="60" aria-pressed="true">60 Hz(台灣市電)</button>
+              <button data-freq="50" aria-pressed="false">50 Hz</button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label>計時器頻率</label>
-        <div class="segmented" id="freqSeg">
-          <button data-freq="60" aria-pressed="true">60 Hz(台灣市電)</button>
-          <button data-freq="50" aria-pressed="false">50 Hz</button>
+
+        <div class="field-row" style="margin-top:16px;">
+          <div class="field" id="v0Field">
+            <label>初速度 <span class="val" id="v0Val">0 cm/s</span></label>
+            <input type="range" id="v0" min="0" max="40" step="1" value="0">
+          </div>
+          <div class="field" id="aField">
+            <label>加速度 <span class="val" id="aVal">15 cm/s²</span></label>
+            <input type="range" id="a" min="5" max="40" step="1" value="15">
+          </div>
+          <div class="field" id="inclineLenField" style="display:none;">
+            <label>斜面長度 <span class="val" id="inclineLenVal">18 cm</span></label>
+            <input type="range" id="inclineLen" min="4" max="20" step="1" value="6">
+          </div>
+          <div class="field">
+            <label>記錄格數 <span class="val" id="countVal">28 格</span></label>
+            <input type="range" id="count" min="15" max="55" step="1" value="28">
+          </div>
+          <div class="field">
+            <label>慢動作倍率 <span class="val" id="slowVal">×10</span></label>
+            <input type="range" id="slow" min="4" max="20" step="1" value="10">
+          </div>
         </div>
-      </div>
+
+        <p class="hint" id="manualHint" style="display:none;">點擊「開始記錄」後,直接用滑鼠拖曳(或手指觸控)下方軌道上的小車左右移動,自己拉出紙帶;放開後小車會停在原地,直到你再次拖曳。</p>
+
+        <div class="btn-row">
+          <button class="action" id="startBtn">開始記錄</button>
+          <button class="action secondary" id="resetBtn">重置</button>
+          <span class="status" id="statusText">尚未開始</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="stage-wrap">
+          <svg id="stage" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <p class="hint">紙帶從計時器被拉出:小車愈快,紙帶上兩點間距愈大。靜止時所有點會重疊在同一位置;等速度運動的點等距排列;加速、減速或斜面下滑則點距逐漸變大或變小。斜面下滑到底後會接上光滑平面,以等速度繼續前進。手動拉動則需要自己拖曳小車,點距通常不太規則。</p>
+      </section>
     </div>
 
-    <div class="field-row" style="margin-top:16px;">
-      <div class="field" id="v0Field">
-        <label>初速度 <span class="val" id="v0Val">0 cm/s</span></label>
-        <input type="range" id="v0" min="0" max="40" step="1" value="0">
-      </div>
-      <div class="field" id="aField">
-        <label>加速度 <span class="val" id="aVal">15 cm/s²</span></label>
-        <input type="range" id="a" min="5" max="40" step="1" value="15">
-      </div>
-      <div class="field" id="inclineLenField" style="display:none;">
-        <label>斜面長度 <span class="val" id="inclineLenVal">18 cm</span></label>
-        <input type="range" id="inclineLen" min="4" max="20" step="1" value="6">
-      </div>
-      <div class="field">
-        <label>記錄格數 <span class="val" id="countVal">28 格</span></label>
-        <input type="range" id="count" min="15" max="55" step="1" value="28">
-      </div>
-      <div class="field">
-        <label>慢動作倍率 <span class="val" id="slowVal">×10</span></label>
-        <input type="range" id="slow" min="4" max="20" step="1" value="10">
-      </div>
-    </div>
+    <div class="right-col">
+      <section class="panel" id="analysisSection">
+        <h2 style="font-family:'Noto Serif TC',serif; font-size:18px; margin:0 0 4px;">紙帶分析</h2>
+        <div class="segmented" id="measureModeSeg" style="margin:8px 0 10px;">
+          <button data-mode="velocity" aria-pressed="true">量平均速度(點選2點)</button>
+          <button data-mode="acceleration" aria-pressed="false">量加速度(點選3點)</button>
+        </div>
+        <p class="hint" style="margin-top:2px;" id="measureHint">點選紙帶上任兩個點,量出這兩點間的位移與所花時間,算出這段的平均速度。相鄰兩點間距太小不易測量時,建議跨 5 格(6 個點)一起量。</p>
+        <div class="stage-wrap" style="margin-top:10px;">
+          <svg id="tapeStage" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="analysis-out" id="measureOut">
+          <span class="empty">請點選紙帶上的兩個點</span>
+        </div>
 
-    <p class="hint" id="manualHint" style="display:none;">點擊「開始記錄」後,直接用滑鼠拖曳(或手指觸控)下方軌道上的小車左右移動,自己拉出紙帶;放開後小車會停在原地,直到你再次拖曳。</p>
-
-    <div class="btn-row">
-      <button class="action" id="startBtn">開始記錄</button>
-      <button class="action secondary" id="resetBtn">重置</button>
-      <span class="status" id="statusText">尚未開始</span>
+        <h2 style="font-family:'Noto Serif TC',serif; font-size:18px; margin:26px 0 4px;">x-t 圖與 v-t 圖</h2>
+        <p class="hint" style="margin-top:2px;">根據這次記錄的每一個點,自動畫出的位置-時間圖與速度-時間圖(速度是相鄰兩點間的平均速度,標在這段時間的中點)。</p>
+        <div class="chart-grid">
+          <div>
+            <h3 class="chart-title">x-t 圖</h3>
+            <div class="stage-wrap"><svg id="xtChart" viewBox="0 0 460 220" preserveAspectRatio="xMidYMid meet"></svg></div>
+          </div>
+          <div>
+            <h3 class="chart-title">v-t 圖</h3>
+            <div class="stage-wrap"><svg id="vtChart" viewBox="0 0 460 220" preserveAspectRatio="xMidYMid meet"></svg></div>
+          </div>
+        </div>
+      </section>
     </div>
-  </section>
-
-  <section class="panel">
-    <div class="stage-wrap">
-      <svg id="stage" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid meet"></svg>
-    </div>
-    <p class="hint">紙帶從計時器被拉出:小車愈快,紙帶上兩點間距愈大。靜止時所有點會重疊在同一位置;等速度運動的點等距排列;加速、減速或斜面下滑則點距逐漸變大或變小。斜面下滑到底後會接上光滑平面,以等速度繼續前進。手動拉動則需要自己拖曳小車,點距通常不太規則。</p>
-  </section>
-
-  <section class="panel" id="analysisSection">
-    <h2 style="font-family:'Noto Serif TC',serif; font-size:18px; margin:0 0 4px;">紙帶分析</h2>
-    <div class="segmented" id="measureModeSeg" style="margin:8px 0 10px;">
-      <button data-mode="velocity" aria-pressed="true">量平均速度(點選2點)</button>
-      <button data-mode="acceleration" aria-pressed="false">量加速度(點選3點)</button>
-    </div>
-    <p class="hint" style="margin-top:2px;" id="measureHint">點選紙帶上任兩個點,量出這兩點間的位移與所花時間,算出這段的平均速度。相鄰兩點間距太小不易測量時,建議跨 5 格(6 個點)一起量。</p>
-    <div class="stage-wrap" style="margin-top:10px;">
-      <svg id="tapeStage" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid meet"></svg>
-    </div>
-    <div class="analysis-out" id="measureOut">
-      <span class="empty">請點選紙帶上的兩個點</span>
-    </div>
-
-    <h2 style="font-family:'Noto Serif TC',serif; font-size:18px; margin:26px 0 4px;">x-t 圖與 v-t 圖</h2>
-    <p class="hint" style="margin-top:2px;">根據這次記錄的每一個點,自動畫出的位置-時間圖與速度-時間圖(速度是相鄰兩點間的平均速度,標在這段時間的中點)。</p>
-    <div class="chart-grid">
-      <div>
-        <h3 class="chart-title">x-t 圖</h3>
-        <div class="stage-wrap"><svg id="xtChart" viewBox="0 0 460 220" preserveAspectRatio="xMidYMid meet"></svg></div>
-      </div>
-      <div>
-        <h3 class="chart-title">v-t 圖</h3>
-        <div class="stage-wrap"><svg id="vtChart" viewBox="0 0 460 220" preserveAspectRatio="xMidYMid meet"></svg></div>
-      </div>
-    </div>
-  </section>
+  </div>
 
   <footer>模擬工具,實際紙帶點距會受紙帶張力、限時器振動穩定度等因素影響而略有誤差。</footer>
 </div>
