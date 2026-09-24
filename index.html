@@ -78,30 +78,35 @@
     line-height: 1.6;
   }
   .wrap{
-    max-width: 1320px;
+    max-width: 880px;
     margin: 0 auto;
     padding: 28px 20px 60px;
   }
-  .layout{
-    display: grid;
-    grid-template-columns: 1fr;
+  .layout-grid{
+    display: flex;
+    flex-direction: column;
     gap: 22px;
-    align-items: start;
   }
-  @media (min-width: 980px){
-    .layout{
-      grid-template-columns: minmax(0,1fr) 440px;
-    }
-    .layout .right-col{
-      position: sticky;
-      top: 16px;
-    }
-  }
-  .left-col, .right-col{
+  .col-left, .col-right{
     display: flex;
     flex-direction: column;
     gap: 22px;
     min-width: 0;
+  }
+  .layout-grid section{ margin-top: 0; }
+  .placeholder-panel{
+    color: var(--ink-soft);
+    font-size: 14px;
+    text-align: center;
+    padding: 40px 18px;
+  }
+  @media (min-width: 1000px){
+    .wrap{ max-width: 1320px; }
+    .layout-grid{
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      align-items: start;
+    }
   }
   header h1{
     font-family: "Noto Serif TC", serif;
@@ -117,11 +122,6 @@
     max-width: 62ch;
   }
 
-  .layout > section,
-  .left-col > section,
-  .right-col > section{
-    margin-top: 0;
-  }
   section{
     margin-top: 22px;
   }
@@ -186,6 +186,10 @@
   .segmented button[aria-pressed="true"]{
     background: var(--rail);
     color: #fff;
+  }
+  .segmented.disabled button{
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 
   .btn-row{
@@ -259,8 +263,11 @@
   .chart-grid{
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 16px;
     margin-top: 10px;
+  }
+  @media (max-width: 640px){
+    .chart-grid{ grid-template-columns: 1fr; }
   }
   .chart-title{
     font-family: "Noto Serif TC", serif;
@@ -287,102 +294,104 @@
 <div class="wrap">
   <header>
     <h1>打點計時器實驗室</h1>
-    <p>模擬小車拉動紙帶通過打點計時器的過程。選擇運動方式並開始,觀察紙帶被拉出來的樣子與點的間距,再點選兩點量出這段的平均速度。</p>
+    <p>模擬小車拉動紙帶(或重錘自由落體垂直下落)通過打點計時器的過程。選擇運動方式並開始,觀察紙帶被拉出來的樣子與點的間距,再點選兩點量出這段的平均速度。</p>
   </header>
 
-  <div class="layout">
-    <div class="left-col">
-      <section class="panel" id="controls">
-        <div class="field-row">
-          <div class="field">
-            <label>運動方式</label>
-            <div class="segmented" id="motionSeg">
-              <button data-mode="stationary" aria-pressed="false">靜止</button>
-              <button data-mode="constant" aria-pressed="false">等速度運動</button>
-              <button data-mode="accelerate" aria-pressed="true">等加速度運動(加速)</button>
-              <button data-mode="decelerate" aria-pressed="false">等加速度運動(減速)</button>
-              <button data-mode="incline" aria-pressed="false">斜面下滑</button>
-              <button data-mode="manual" aria-pressed="false">手動拉動</button>
-            </div>
-          </div>
-          <div class="field">
-            <label>計時器頻率</label>
-            <div class="segmented" id="freqSeg">
-              <button data-freq="60" aria-pressed="true">60 Hz(台灣市電)</button>
-              <button data-freq="50" aria-pressed="false">50 Hz</button>
-            </div>
-          </div>
+  <div class="layout-grid">
+  <div class="col-left">
+  <section class="panel" id="controls">
+    <div class="field-row">
+      <div class="field">
+        <label>運動方式</label>
+        <div class="segmented" id="motionSeg">
+          <button data-mode="stationary" aria-pressed="false">靜止</button>
+          <button data-mode="constant" aria-pressed="false">等速度運動</button>
+          <button data-mode="accelerate" aria-pressed="true">等加速度運動(加速)</button>
+          <button data-mode="decelerate" aria-pressed="false">等加速度運動(減速)</button>
+          <button data-mode="incline" aria-pressed="false">斜面下滑</button>
+          <button data-mode="freefall" aria-pressed="false">自由落體(非滑車)</button>
+          <button data-mode="manual" aria-pressed="false">手動拉動</button>
         </div>
-
-        <div class="field-row" style="margin-top:16px;">
-          <div class="field" id="v0Field">
-            <label>初速度 <span class="val" id="v0Val">0 cm/s</span></label>
-            <input type="range" id="v0" min="0" max="40" step="1" value="0">
-          </div>
-          <div class="field" id="aField">
-            <label>加速度 <span class="val" id="aVal">15 cm/s²</span></label>
-            <input type="range" id="a" min="5" max="40" step="1" value="15">
-          </div>
-          <div class="field" id="inclineLenField" style="display:none;">
-            <label>斜面長度 <span class="val" id="inclineLenVal">18 cm</span></label>
-            <input type="range" id="inclineLen" min="4" max="20" step="1" value="6">
-          </div>
-          <div class="field">
-            <label>記錄格數 <span class="val" id="countVal">28 格</span></label>
-            <input type="range" id="count" min="15" max="55" step="1" value="28">
-          </div>
-          <div class="field">
-            <label>慢動作倍率 <span class="val" id="slowVal">×10</span></label>
-            <input type="range" id="slow" min="4" max="20" step="1" value="10">
-          </div>
+      </div>
+      <div class="field">
+        <label>計時器頻率</label>
+        <div class="segmented" id="freqSeg">
+          <button data-freq="60" aria-pressed="true">60 Hz(台灣市電)</button>
+          <button data-freq="50" aria-pressed="false">50 Hz</button>
         </div>
-
-        <p class="hint" id="manualHint" style="display:none;">點擊「開始記錄」後,直接用滑鼠拖曳(或手指觸控)下方軌道上的小車左右移動,自己拉出紙帶;放開後小車會停在原地,直到你再次拖曳。</p>
-
-        <div class="btn-row">
-          <button class="action" id="startBtn">開始記錄</button>
-          <button class="action secondary" id="resetBtn">重置</button>
-          <span class="status" id="statusText">尚未開始</span>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="stage-wrap">
-          <svg id="stage" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid meet"></svg>
-        </div>
-        <p class="hint">紙帶從計時器被拉出:小車愈快,紙帶上兩點間距愈大。靜止時所有點會重疊在同一位置;等速度運動的點等距排列;加速、減速或斜面下滑則點距逐漸變大或變小。斜面下滑到底後會接上光滑平面,以等速度繼續前進。手動拉動則需要自己拖曳小車,點距通常不太規則。</p>
-      </section>
+      </div>
     </div>
 
-    <div class="right-col">
-      <section class="panel" id="analysisSection">
-        <h2 style="font-family:'Noto Serif TC',serif; font-size:18px; margin:0 0 4px;">紙帶分析</h2>
-        <div class="segmented" id="measureModeSeg" style="margin:8px 0 10px;">
-          <button data-mode="velocity" aria-pressed="true">量平均速度(點選2點)</button>
-          <button data-mode="acceleration" aria-pressed="false">量加速度(點選3點)</button>
-        </div>
-        <p class="hint" style="margin-top:2px;" id="measureHint">點選紙帶上任兩個點,量出這兩點間的位移與所花時間,算出這段的平均速度。相鄰兩點間距太小不易測量時,建議跨 5 格(6 個點)一起量。</p>
-        <div class="stage-wrap" style="margin-top:10px;">
-          <svg id="tapeStage" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid meet"></svg>
-        </div>
-        <div class="analysis-out" id="measureOut">
-          <span class="empty">請點選紙帶上的兩個點</span>
-        </div>
-
-        <h2 style="font-family:'Noto Serif TC',serif; font-size:18px; margin:26px 0 4px;">x-t 圖與 v-t 圖</h2>
-        <p class="hint" style="margin-top:2px;">根據這次記錄的每一個點,自動畫出的位置-時間圖與速度-時間圖(速度是相鄰兩點間的平均速度,標在這段時間的中點)。</p>
-        <div class="chart-grid">
-          <div>
-            <h3 class="chart-title">x-t 圖</h3>
-            <div class="stage-wrap"><svg id="xtChart" viewBox="0 0 460 220" preserveAspectRatio="xMidYMid meet"></svg></div>
-          </div>
-          <div>
-            <h3 class="chart-title">v-t 圖</h3>
-            <div class="stage-wrap"><svg id="vtChart" viewBox="0 0 460 220" preserveAspectRatio="xMidYMid meet"></svg></div>
-          </div>
-        </div>
-      </section>
+    <div class="field-row" style="margin-top:16px;">
+      <div class="field" id="v0Field">
+        <label>初速度 <span class="val" id="v0Val">0 cm/s</span></label>
+        <input type="range" id="v0" min="0" max="40" step="1" value="0">
+      </div>
+      <div class="field" id="aField">
+        <label>加速度 <span class="val" id="aVal">15 cm/s²</span></label>
+        <input type="range" id="a" min="5" max="40" step="1" value="15">
+      </div>
+      <div class="field" id="inclineLenField" style="display:none;">
+        <label>斜面長度 <span class="val" id="inclineLenVal">18 cm</span></label>
+        <input type="range" id="inclineLen" min="4" max="20" step="1" value="6">
+      </div>
+      <div class="field">
+        <label>記錄格數 <span class="val" id="countVal">28 格</span></label>
+        <input type="range" id="count" min="15" max="55" step="1" value="28">
+      </div>
+      <div class="field">
+        <label>慢動作倍率 <span class="val" id="slowVal">×10</span></label>
+        <input type="range" id="slow" min="4" max="20" step="1" value="10">
+      </div>
     </div>
+
+    <p class="hint" id="manualHint" style="display:none;">點擊「開始記錄」後,直接用滑鼠拖曳(或手指觸控)下方軌道上的小車左右移動,自己拉出紙帶;放開後小車會停在原地,直到你再次拖曳。</p>
+
+    <div class="btn-row">
+      <button class="action" id="startBtn">開始記錄</button>
+      <button class="action secondary" id="resetBtn">重置</button>
+      <span class="status" id="statusText">尚未開始</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="stage-wrap">
+      <svg id="stage" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <p class="hint">紙帶從計時器被拉出:小車愈快,紙帶上兩點間距愈大。靜止時所有點會重疊在同一位置;等速度運動的點等距排列;加速、減速或斜面下滑則點距逐漸變大或變小。斜面下滑到底後會接上光滑平面,以等速度繼續前進。手動拉動則需要自己拖曳小車,點距通常不太規則。自由落體是重錘由靜止垂直落下、不使用滑車,紙帶隨重錘往下拉出,點距會由小漸大。</p>
+  </section>
+  </div>
+
+  <div class="col-right">
+  <section class="panel placeholder-panel" id="analysisPlaceholder">紀錄完成後,紙帶分析與 x-t／v-t 圖會顯示在這裡。</section>
+  <section class="panel" id="analysisSection">
+    <h2 style="font-family:'Noto Serif TC',serif; font-size:18px; margin:0 0 4px;">紙帶分析</h2>
+    <div class="segmented" id="measureModeSeg" style="margin:8px 0 10px;">
+      <button data-mode="velocity" aria-pressed="true">量平均速度(點選2點)</button>
+      <button data-mode="acceleration" aria-pressed="false">量加速度(點選3點)</button>
+    </div>
+    <p class="hint" style="margin-top:2px;" id="measureHint">點選紙帶上任兩個點,量出這兩點間的位移與所花時間,算出這段的平均速度。相鄰兩點間距太小不易測量時,建議跨 5 格(6 個點)一起量。</p>
+    <div class="stage-wrap" style="margin-top:10px;">
+      <svg id="tapeStage" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="analysis-out" id="measureOut">
+      <span class="empty">請點選紙帶上的兩個點</span>
+    </div>
+
+    <h2 style="font-family:'Noto Serif TC',serif; font-size:18px; margin:26px 0 4px;">x-t 圖與 v-t 圖</h2>
+    <p class="hint" style="margin-top:2px;">根據這次記錄的每一個點,自動畫出的位置-時間圖與速度-時間圖(速度是相鄰兩點間的平均速度,標在這段時間的中點)。</p>
+    <div class="chart-grid">
+      <div>
+        <h3 class="chart-title">x-t 圖</h3>
+        <div class="stage-wrap"><svg id="xtChart" viewBox="0 0 460 220" preserveAspectRatio="xMidYMid meet"></svg></div>
+      </div>
+      <div>
+        <h3 class="chart-title">v-t 圖</h3>
+        <div class="stage-wrap"><svg id="vtChart" viewBox="0 0 460 220" preserveAspectRatio="xMidYMid meet"></svg></div>
+      </div>
+    </div>
+  </section>
+  </div>
   </div>
 
   <footer>模擬工具,實際紙帶點距會受紙帶張力、限時器振動穩定度等因素影響而略有誤差。</footer>
@@ -413,6 +422,7 @@
   const startBtn = el('startBtn');
   const resetBtn = el('resetBtn');
   const analysisSection = el('analysisSection');
+  const analysisPlaceholder = el('analysisPlaceholder');
   const measureOut = el('measureOut');
 
   const SVG_NS = "http://www.w3.org/2000/svg";
@@ -454,6 +464,8 @@
     aField.style.display = '';
     inclineLenField.style.display = 'none';
     manualHint.style.display = 'none';
+    aField.querySelector('label').firstChild.textContent = '加速度 ';
+    el('a').step = 1;
 
     if(state.motionType === 'stationary'){
       v0Field.style.display = 'none';
@@ -478,6 +490,12 @@
       el('a').min=15; el('a').max=40; state.a = 25; el('a').value=25;
       state.dotCount = 50; el('count').value = 50;
       inclineLenField.style.display = '';
+    } else if(state.motionType === 'freefall'){
+      v0Field.style.display = 'none';
+      state.v0 = 0;
+      aField.querySelector('label').firstChild.textContent = '重力加速度 g ';
+      el('a').min = 150; el('a').max = 1000; el('a').step = 5; state.a = 980; el('a').value = 980;
+      state.dotCount = 20; el('count').value = 20;
     } else if(state.motionType === 'manual'){
       v0Field.style.display = 'none';
       aField.style.display = 'none';
@@ -523,6 +541,8 @@
       } else if(state.motionType === 'incline'){
         const {L, tEnd, vEnd} = inclineParams();
         x = t <= tEnd ? 0.5*state.a*t*t : L + vEnd*(t-tEnd);
+      } else if(state.motionType === 'freefall'){
+        x = 0.5*state.a*t*t;
       } else {
         const sign = state.motionType === 'decelerate' ? -1 : 1;
         const v = state.v0 + sign*state.a*t;
@@ -541,6 +561,7 @@
       const {L, tEnd, vEnd} = inclineParams();
       return t <= tEnd ? 0.5*state.a*t*t : L + vEnd*(t-tEnd);
     }
+    if(state.motionType === 'freefall') return 0.5*state.a*t*t;
     const sign = state.motionType === 'decelerate' ? -1 : 1;
     let tt = t;
     if(state.motionType === 'decelerate'){
@@ -553,6 +574,7 @@
   // ---- drawing: apparatus stage ----
   const MARGIN_L = 110, MARGIN_R = 50, SVG_W = 1000;
   const TRACK_Y = 110, RULER_Y = 150, TOP_Y = 55, INCLINE_ANGLE = 12;
+  const FF_W = 460, FF_H = 460, FF_MARGIN_TOP = 70, FF_MARGIN_BOTTOM = 50;
 
   function scaleFor(trackLength){
     const usable = SVG_W - MARGIN_L - MARGIN_R;
@@ -569,6 +591,9 @@
       }
       const jx = sx + L*pxPerCm*Math.cos(rad), jy = sy + L*pxPerCm*Math.sin(rad);
       return { x: jx + (cmX-L)*pxPerCm, y: jy };
+    }
+    if(!forceFlat && state.motionType === 'freefall'){
+      return { x: sx, y: sy + cmX*pxPerCm };
     }
     return { x: sx + cmX*pxPerCm, y: sy };
   }
@@ -587,13 +612,64 @@
     svg.dataset.timerPivotY = start.y-28;
   }
 
+  function appendTimerVertical(svg, start){
+    const timerG = svgEl('g', {});
+    timerG.appendChild(svgEl('rect', {x: start.x-32, y: start.y-52, width:64, height:34, rx:4, fill:'var(--rail-dark)'}));
+    const label = svgEl('text', {x: start.x, y: start.y-58, 'text-anchor':'middle', class:'idx-label', fill:'var(--ink-soft)'});
+    label.textContent = '打點計時器';
+    timerG.appendChild(label);
+    const arm = svgEl('rect', {id:'timerArm', x: start.x-2, y: start.y-48, width:4, height:16, fill:'var(--brass)'});
+    timerG.appendChild(arm);
+    svg.appendChild(timerG);
+    svg.appendChild(svgEl('circle', {cx:start.x, cy:start.y-14, r:8, fill:'none', stroke:'var(--tape-edge)', 'stroke-width':3}));
+    svg.dataset.timerPivotX = start.x;
+    svg.dataset.timerPivotY = start.y-46;
+  }
+
   function drawBase(svg, trackLength, opts){
     svg.innerHTML = '';
-    const pxPerCm = scaleFor(trackLength);
     opts = opts || {};
     const incline = state.motionType === 'incline' && !opts.flat;
+    const freefall = state.motionType === 'freefall' && !opts.flat;
     const rad = INCLINE_ANGLE * Math.PI/180;
 
+    if(svg.id === 'stage'){
+      svg.setAttribute('viewBox', freefall ? `0 0 ${FF_W} ${FF_H}` : `0 0 ${SVG_W} 260`);
+    }
+
+    if(freefall){
+      const pxPerCm = (FF_H - FF_MARGIN_TOP - FF_MARGIN_BOTTOM) / Math.max(trackLength, 5);
+      const start = { x: FF_W/2 - 40, y: FF_MARGIN_TOP };
+      svg.dataset.startX = start.x;
+      svg.dataset.startY = start.y;
+      const endY = start.y + trackLength*pxPerCm;
+
+      if(!opts.minimal) appendTimerVertical(svg, start);
+      svg.appendChild(svgEl('line', {x1:start.x, y1:start.y, x2:start.x, y2:endY, stroke:'var(--rail)', 'stroke-width':2, 'stroke-dasharray':'2 6', opacity:'0.6'}));
+
+      const maxCm = Math.ceil(trackLength);
+      const rulerX = start.x + 60;
+      for(let c=0;c<=maxCm;c++){
+        const y = start.y + c*pxPerCm;
+        const big = c % 5 === 0;
+        svg.appendChild(svgEl('line', {x1:rulerX, y1:y, x2:rulerX+(big?10:6), y2:y, stroke:'var(--ink-soft)', 'stroke-width':1}));
+        if(big){
+          const t = svgEl('text', {x:rulerX+14, y:y+4, 'text-anchor':'start', class:'cm-label'});
+          t.textContent = c;
+          svg.appendChild(t);
+        }
+      }
+      const unitLabel = svgEl('text', {x: rulerX+14, y: start.y-10, 'text-anchor':'start', class:'cm-label'});
+      unitLabel.textContent = 'cm';
+      svg.appendChild(unitLabel);
+      svg.appendChild(svgEl('line', {x1:start.x-50, y1:endY+10, x2:start.x+50, y2:endY+10, stroke:'var(--ink-soft)', 'stroke-width':2}));
+      const groundLabel = svgEl('text', {x:start.x, y:endY+26, 'text-anchor':'middle', class:'idx-label'});
+      groundLabel.textContent = '地面';
+      svg.appendChild(groundLabel);
+      return pxPerCm;
+    }
+
+    const pxPerCm = scaleFor(trackLength);
     const start = incline ? {x: MARGIN_L, y: TOP_Y} : {x: MARGIN_L, y: TRACK_Y};
     svg.dataset.startX = start.x;
     svg.dataset.startY = start.y;
@@ -645,6 +721,15 @@
     const old = svg.querySelector('#cartGroup');
     if(old) old.remove();
     const p = pointAtCm(svg, cmX, pxPerCm);
+    if(state.motionType === 'freefall'){
+      const g = svgEl('g', {id:'cartGroup'});
+      g.appendChild(svgEl('line', {x1:p.x, y1:p.y-18, x2:p.x, y2:p.y-6, stroke:'var(--tape-edge)', 'stroke-width':3}));
+      g.appendChild(svgEl('rect', {x:p.x-13, y:p.y-6, width:26, height:24, rx:5, fill:'var(--brass)', stroke:'var(--brass-dark)'}));
+      g.appendChild(svgEl('line', {x1:p.x-13, y1:p.y+2, x2:p.x+13, y2:p.y+2, stroke:'var(--brass-dark)', 'stroke-width':1}));
+      g.appendChild(svgEl('line', {x1:p.x-13, y1:p.y+10, x2:p.x+13, y2:p.y+10, stroke:'var(--brass-dark)', 'stroke-width':1}));
+      svg.appendChild(g);
+      return g;
+    }
     let angle = 0;
     if(state.motionType === 'incline' && cmX <= state.inclineLen) angle = INCLINE_ANGLE;
     const g = svgEl('g', {id:'cartGroup', transform:`rotate(${angle} ${p.x} ${p.y})`});
@@ -703,7 +788,7 @@
     }
     state.running = true;
     startBtn.disabled = true;
-    analysisSection.style.display = 'none';
+    analysisSection.style.display = 'none'; analysisPlaceholder.style.display = '';
     state.selected = [];
 
     const trackLength = Math.max(...state.dots) * 1.15;
@@ -742,8 +827,10 @@
       }
       stampedEls.forEach(item=>{
         const p = pointAtCm(stage, cartCm-item.off, pxPerCm);
+        let cy = p.y;
+        if(state.motionType === 'stationary') cy += (item.idx % 2 === 0 ? -4 : 4);
         item.el.setAttribute('cx', p.x);
-        item.el.setAttribute('cy', p.y);
+        item.el.setAttribute('cy', cy);
       });
 
       statusText.textContent = `時間 ${tSim.toFixed(2)} s　已打 ${stampIndex} 個點`;
@@ -768,7 +855,7 @@
     state.manualCm = 0;
     state.running = true;
     startBtn.disabled = true;
-    analysisSection.style.display = 'none';
+    analysisSection.style.display = 'none'; analysisPlaceholder.style.display = '';
     state.selected = [];
 
     const trackLength = state.manualMaxLen;
@@ -830,7 +917,7 @@
     state.manualCm = 0;
     isDragging = false;
     startBtn.disabled = false;
-    analysisSection.style.display = 'none';
+    analysisSection.style.display = 'none'; analysisPlaceholder.style.display = '';
     statusText.textContent = '尚未開始';
     drawIdleStage();
   }
@@ -881,18 +968,21 @@
   }
 
   function showAnalysis(){
-    analysisSection.style.display = 'block';
+    analysisSection.style.display = 'block'; analysisPlaceholder.style.display = 'none';
     const trackLength = Math.max(...state.dots) * 1.15;
     const pxPerCm = drawBase(tapeStage, trackLength, {minimal:true, flat:true});
     tapeStage.dataset.pxPerCm = pxPerCm;
 
     const stationary = state.motionType === 'stationary';
+    const measureSeg = el('measureModeSeg');
+
     if(stationary){
+      // the cart never moves, so every strike lands on the exact same spot:
+      // show a single point rather than a jittered cluster of "distinct" dots
       const p = pointAtCm(tapeStage, 0, pxPerCm, true);
-      const c = svgEl('circle', {cx:p.x, cy:p.y, r:5, fill:'var(--dot)'});
-      tapeStage.appendChild(c);
-      const label = svgEl('text', {x:p.x, y:TRACK_Y-16, 'text-anchor':'middle', class:'idx-label'});
-      label.textContent = `${state.dots.length} 個點全部重疊在同一位置`;
+      tapeStage.appendChild(svgEl('circle', {cx:p.x, cy:p.y, r:5, fill:'var(--dot)'}));
+      const label = svgEl('text', {x:p.x, y:TRACK_Y-14, 'text-anchor':'middle', class:'idx-label'});
+      label.textContent = `${state.dots.length} 個點重疊於此`;
       tapeStage.appendChild(label);
     } else {
       state.dots.forEach((cmX, idx)=>{
@@ -907,13 +997,27 @@
         }
       });
     }
+
     state.measureMode = 'velocity';
     state.selected = [];
-    setPressed(el('measureModeSeg'), 'button', 'mode', state.measureMode);
-    el('measureHint').textContent = measureHintText();
-    measureOut.innerHTML = stationary
-      ? '<span class="empty">靜止時所有點都重疊在同一位置,Δx 恆為 0,不需要測量</span>'
-      : '<span class="empty">請點選紙帶上的兩個點</span>';
+    setPressed(measureSeg, 'button', 'mode', state.measureMode);
+    measureSeg.querySelectorAll('button').forEach(b => b.disabled = stationary);
+    measureSeg.classList.toggle('disabled', stationary);
+
+    if(stationary){
+      const n = state.dots.length - 1;
+      const dtT = n * dt();
+      el('measureHint').textContent = '小車靜止不動,紙帶上所有點都打在同一個位置,任兩點間的位移都是 0。';
+      measureOut.innerHTML = `<span class="result">
+        第 0 點 → 第 ${n} 點（${n} 格）
+        &nbsp;&nbsp;Δx = <b>0.00 cm</b>
+        &nbsp;&nbsp;Δt = <b>${dtT.toFixed(3)} s</b>
+        &nbsp;&nbsp;v = <b>0.0 cm/s</b>
+      </span>`;
+    } else {
+      el('measureHint').textContent = measureHintText();
+      measureOut.innerHTML = '<span class="empty">請點選紙帶上的兩個點</span>';
+    }
 
     drawMotionCharts();
   }
@@ -966,14 +1070,17 @@
     const padL=42, padR=12, padT=14, padB=30;
     const xs = points.map(p=>p.t), ys = points.map(p=>p.y);
     const xMin = 0, xMax = Math.max(...xs, 0.001);
-    let yMin = Math.min(0, ...ys), yMax = Math.max(0, ...ys);
+
+    let yMin = Math.min(0, ...ys);
+    let yMax = Math.max(0, ...ys);
     if(yMax - yMin < 1e-9){
-      // degenerate (e.g. stationary: every value is 0) — keep the flat line exactly on the t-axis,
-      // just add headroom above so the axis still has visible gridlines
+      // flat line at a constant value (e.g. stationary): keep the baseline exactly
+      // on the true value so the line coincides with the t-axis, just add headroom above it
       yMax = yMin + 1;
     } else {
-      const pad = (yMax-yMin)*0.08;
-      yMin -= pad; yMax += pad;
+      const pad = (yMax - yMin) * 0.08;
+      yMax += pad;
+      if(yMin < 0) yMin -= pad; // only pad below the axis when data actually goes negative
     }
 
     const { xScale, yScale } = chartAxes(svg, xMin, xMax, yMin, yMax, padL, padR, padT, padB, xLabel, yLabel);
